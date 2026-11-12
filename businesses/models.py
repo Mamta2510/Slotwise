@@ -29,3 +29,29 @@ class Service(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.business.name}"
+
+
+class WorkingHours(models.Model):
+    class Weekday(models.IntegerChoices):
+        MONDAY = 0, "Monday"
+        TUESDAY = 1, "Tuesday"
+        WEDNESDAY = 2, "Wednesday"
+        THURSDAY = 3, "Thursday"
+        FRIDAY = 4, "Friday"
+        SATURDAY = 5, "Saturday"
+        SUNDAY = 6, "Sunday"
+
+    business = models.ForeignKey(Business,on_delete=models.CASCADE,related_name="working_hours",)
+    weekday = models.IntegerField(choices=Weekday.choices)
+    opening_time = models.TimeField()
+    closing_time = models.TimeField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["business", "weekday"],name="unique_business_weekday",),
+            models.CheckConstraint(check=models.Q(closing_time__gt=models.F("opening_time")),
+                name="working_hours_close_after_open",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.business.name} - {self.get_weekday_display()}"
